@@ -327,13 +327,19 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         name = update.effective_user.first_name or "there"
 
         text = (
-            f"🏠 {lc(lang)['menu_title']}\n\n"
-            f"👋 Welcome back, {name} (@{user['username']})\n" if user["username"] else f"👋 Welcome back, {name}\n"
-            f"⭐ Level: {user['level']}\n"
-            f"💰 Your points: {user['points']:,}\n\n"
-            f"You can earn more points by completing tasks!\n"
-            f"📋 Go to Tasks to start earning."
-        )
+    f"🏠 {lc(lang)['menu_title']}\n\n"
+    f"👋 Welcome back, {name}"
+)
+
+if user["username"]:
+    text += f" (@{user['username']})"
+
+text += (
+    f"\n⭐ Level: {user['level']}\n"
+    f"💰 Your points: {user['points']:,}\n\n"
+    f"You can earn more points by completing tasks!\n"
+    f"📋 Go to Tasks to start earning."
+)
 
         await update.message.reply_text(
             text,
