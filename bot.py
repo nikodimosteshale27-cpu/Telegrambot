@@ -320,16 +320,37 @@ def back_kb(lang: str) -> InlineKeyboardMarkup:
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     user = await get_user(uid)
+
+    # If user already exists → go straight to menu
     if user:
         lang = user["lang"] or "en"
-        await update.message.reply_text(lc(lang)["menu_title"], reply_markup=menu_keyboard(lang))
+        name = update.effective_user.first_name or "there"
+
+        text = (
+            f"🏠 {lc(lang)['menu_title']}\n\n"
+            f"👋 Welcome back, {name} (@{user['username']})\n" if user["username"] else f"👋 Welcome back, {name}\n"
+            f"⭐ Level: {user['level']}\n"
+            f"💰 Your points: {user['points']:,}\n\n"
+            f"You can earn more points by completing tasks!\n"
+            f"📋 Go to Tasks to start earning."
+        )
+
+        await update.message.reply_text(
+            text,
+            reply_markup=menu_keyboard(lang)
+        )
         return
+
+    # First-time user → language selection
     kb = InlineKeyboardMarkup([[
         InlineKeyboardButton(MSG["en"]["lang_button"], callback_data="lang_en"),
         InlineKeyboardButton(MSG["am"]["lang_button"], callback_data="lang_am"),
     ]])
-    await update.message.reply_text(MSG["en"]["language_prompt"], reply_markup=kb)
 
+    await update.message.reply_text(
+        MSG["en"]["language_prompt"],
+        reply_markup=kb
+    )
 
 # ── Onboarding: Language → Age → ToS ─────────────────────────────────────────
 
