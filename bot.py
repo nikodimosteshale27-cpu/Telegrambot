@@ -939,14 +939,67 @@ async def cmd_userinfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 # ── App startup ───────────────────────────────────────────────────────────────
+async def create_tables():
+    async with pool.acquire() as conn:
+        await conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id BIGINT PRIMARY KEY,
+            username TEXT,
+            lang TEXT DEFAULT 'en',
+            points INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            daily_claimed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
 
+        CREATE TABLE IF NOT EXISTS admins (
+            user_id BIGINT PRIMARY KEY,
+            role TEXT DEFAULT 'admin',
+            created_by BIGINT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS tasks (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            points INTEGER DEFAULT 0,
+            link TEXT,
+            active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS task_completions (
+            user_id BIGINT NOT NULL,
+            task_id INTEGER NOT NULL,
+            completed_at TIMESTAMPTZ DEFAULT NOW(),
+            PRIMARY KEY (user_id, task_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS rewards (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            cost INTEGER NOT NULL,
+            active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        """)
 
 async def post_init(app: Application):
     global pool
-    pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=10)
-    await seed_tasks()
-    print("✅ DB pool ready and tasks seeded")
 
+    pool = await asyncpg.create_pool(
+        DATABASE_URL,
+        min_size=2,
+        max_size=10,
+        ssl="require"
+    )
+
+    await create_tables()
+    await seed_tasks()
+
+    print("✅ DB ready")
 
 def main():
     app = (
